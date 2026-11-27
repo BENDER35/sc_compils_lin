@@ -87,7 +87,7 @@ git push --quiet "$GL_SSH" --delete "refs/heads/${GL_BRANCH}"
 # comprobar que el espejo inverso también propaga las eliminaciones.
 if command -v glab >/dev/null 2>&1; then
   log "Disparando pipeline en GitLab para propagar el borrado..."
-  glab api --method POST "projects/${GL_PROJECT_ENC}/pipeline" -f ref=main >/dev/null || \
+  glab api --method POST "projects/${GL_PROJECT_ENC}/pipeline" -F ref=main >/dev/null || \
     warn "No se pudo disparar el pipeline de GitLab"
 fi
 
