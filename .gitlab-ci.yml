@@ -11,6 +11,7 @@ mirror_a_github:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'
     - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: '$CI_PIPELINE_SOURCE == "trigger"'
     # GitLab no crea pipelines al borrar ramas: esta scheduler las propaga.
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
   before_script:
