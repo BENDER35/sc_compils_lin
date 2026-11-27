@@ -1,0 +1,45 @@
+name: Espejo GitHub -> GitLab
+
+# Sincroniza TODAS las ramas y tags de GitHub a GitLab.
+# El push a GitLab usa la opción 'ci.skip' para no disparar el pipeline de
+# GitLab y evitar un bucle infinito. La dirección inversa la hace .gitlab-ci.yml
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mirror-a-gitlab
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    name: Sincronizar con GitLab
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener los scripts del repositorio
+        uses: actions/checkout@v4
+        with:
+          path: mirror-scripts
+          fetch-depth: 1
+
+      - name: Configurar clave SSH de despliegue
+        env:
+          MIRROR_SSH_KEY_B64: ${{ secrets.MIRROR_SSH_KEY_B64 }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 "${HOME}/.ssh"
+          printf '%s' "$MIRROR_SSH_KEY_B64" | base64 -d > "${HOME}/.ssh/mirror_ed25519"
+          chmod 600 "${HOME}/.ssh/mirror_ed25519"
+          ssh-keyscan -H gitlab.com >> "${HOME}/.ssh/known_hosts"
+          echo "GIT_SSH_COMMAND=ssh -i ${HOME}/.ssh/mirror_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" >> "$GITHUB_ENV"
+
+      - name: Push --mirror a GitLab
+        env:
+          SOURCE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+          TARGET_URL: git@gitlab.com:BENDER_5000/sc_compils_lin.git
+          WORKDIR: ${{ runner.temp }}/mirror.git
+        run: bash mirror-scripts/scripts/sync_to_gitlab.sh

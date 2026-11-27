@@ -1,0 +1,25 @@
+# Artefactos locales
+*.exe
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+build/
+dist/
+.publish/
+
+# Python / caches
+__pycache__/
+*.pyc
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Sistema
+.DS_Store
+Thumbs.db
