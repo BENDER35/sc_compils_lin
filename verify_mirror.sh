@@ -80,8 +80,14 @@ wait_for_ref "$GH_URL" "refs/heads/${GL_BRANCH}" present
 ok "GitLab -> GitHub: rama ${GL_BRANCH} sincronizada"
 
 # 3) Borrado en ambas direcciones --------------------------------------------
+# Importante: hacerlo en orden. Si se borran ambas a la vez, el workflow de
+# GitHub puede volver a crear en GitLab la rama que acabamos de borrar.
 git push --quiet "$GH_URL" --delete "refs/heads/${GH_BRANCH}"
+wait_for_ref "$GL_URL" "refs/heads/${GH_BRANCH}" absent
+ok "Eliminación GitHub -> GitLab verificada"
+
 git push --quiet "$GL_SSH" --delete "refs/heads/${GL_BRANCH}"
+wait_for_ref "$GL_URL" "refs/heads/${GL_BRANCH}" absent
 
 # GitLab no genera pipeline al borrar ramas: disparamos uno manualmente para
 # comprobar que el espejo inverso también propaga las eliminaciones.
@@ -91,7 +97,6 @@ if command -v glab >/dev/null 2>&1; then
     warn "No se pudo disparar el pipeline de GitLab"
 fi
 
-wait_for_ref "$GL_URL" "refs/heads/${GH_BRANCH}" absent
 wait_for_ref "$GH_URL" "refs/heads/${GL_BRANCH}" absent
 ok "Eliminación propagada en ambos sentidos"
 
