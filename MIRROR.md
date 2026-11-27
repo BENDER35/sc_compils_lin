@@ -4,8 +4,13 @@
 
 | Dirección | Disparador | Mecanismo | Anti-bucle |
 |---|---|---|---|
-| GitHub → GitLab | `push` en GitHub | GitHub Actions + `git push --mirror` sobre SSH | `-o ci.skip` evita el pipeline de GitLab |
-| GitLab → GitHub | `push` en GitLab | GitLab CI + `git push --mirror` sobre SSH | El push en GitHub dispara Actions, que vuelve a GitLab con `ci.skip` y se detiene |
+| GitHub → GitLab | `push` y `delete` en GitHub | GitHub Actions + `git push --mirror` sobre SSH | `-o ci.skip` evita el pipeline de GitLab |
+| GitLab → GitHub | `push` en GitLab + pipeline programado | GitLab CI + `git push --mirror` sobre SSH | El push en GitHub dispara Actions, que vuelve a GitLab con `ci.skip` y se detiene |
+
+> GitLab **no crea pipelines cuando se borra una rama**. Por eso se añade un
+> pipeline schedule (`0 * * * *`, configurado en GitLab) que propaga borrados y
+> cualquier cambio perdido en un plazo máximo de una hora. GitHub sí emite el
+> evento `delete`, que se maneja directamente en el workflow.
 
 Flujo completo tras un push en GitLab:
 
@@ -37,7 +42,8 @@ Hace tres pruebas reales contra los remotos:
 
 1. Crea `mirror-test-gh-<timestamp>` en GitHub y espera a que exista en GitLab.
 2. Crea `mirror-test-gl-<timestamp>` en GitLab y espera a que exista en GitHub.
-3. Borra ambas ramas y verifica que las eliminaciones se propagan.
+3. Borra ambas ramas, dispara un pipeline en GitLab (necesario por lo anterior) y
+   verifica que las eliminaciones se propagan.
 
 Tiempo de espera por defecto: 300 s (configurable con `MIRROR_TIMEOUT`).
 

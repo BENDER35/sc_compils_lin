@@ -6,6 +6,7 @@ name: Espejo GitHub -> GitLab
 
 on:
   push:
+  delete:          # GitHub no emite 'push' al borrar ramas/tags
   workflow_dispatch:
 
 permissions:

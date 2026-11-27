@@ -11,6 +11,7 @@ set -euo pipefail
 
 GH_REPO="${GH_REPO:-BENDER35/sc_compils_lin}"
 GL_PROJECT="${GL_PROJECT:-BENDER_5000/sc_compils_lin}"
+GL_PROJECT_ENC="${GL_PROJECT//\//%2F}"
 GH_URL="https://github.com/${GH_REPO}.git"
 GL_SSH="git@gitlab.com:${GL_PROJECT}.git"
 GL_URL="https://gitlab.com/${GL_PROJECT}.git"
@@ -22,6 +23,7 @@ GL_BRANCH="mirror-test-gl-${suffix}"
 
 log() { printf '\033[1;34m[+]\033[0m %s\n' "$*"; }
 ok()  { printf '\033[1;32m[OK]\033[0m %s\n' "$*"; }
+warn() { printf '\033[1;33m[!]\033[0m %s\n' "$*" >&2; }
 die() { printf '\033[1;31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
 
 wait_for_ref() {
@@ -80,6 +82,15 @@ ok "GitLab -> GitHub: rama ${GL_BRANCH} sincronizada"
 # 3) Borrado en ambas direcciones --------------------------------------------
 git push --quiet "$GH_URL" --delete "refs/heads/${GH_BRANCH}"
 git push --quiet "$GL_SSH" --delete "refs/heads/${GL_BRANCH}"
+
+# GitLab no genera pipeline al borrar ramas: disparamos uno manualmente para
+# comprobar que el espejo inverso también propaga las eliminaciones.
+if command -v glab >/dev/null 2>&1; then
+  log "Disparando pipeline en GitLab para propagar el borrado..."
+  glab api --method POST "projects/${GL_PROJECT_ENC}/pipeline" -f ref=main >/dev/null || \
+    warn "No se pudo disparar el pipeline de GitLab"
+fi
+
 wait_for_ref "$GL_URL" "refs/heads/${GH_BRANCH}" absent
 wait_for_ref "$GH_URL" "refs/heads/${GL_BRANCH}" absent
 ok "Eliminación propagada en ambos sentidos"
